@@ -80,18 +80,31 @@
               <section class="form-section">
                 <div class="form-section-name">Personal Information</div>
                 <div class="form-item-basic">
-                  <vs-input :state="iName ? 'danger' : null" v-model="name" placeholder="Name">
+                  <vs-input
+                    :state="iName ? 'danger' : null"
+                    v-model="name"
+                    placeholder="Name"
+                    @input="nameInput($event)"
+                    @change="nameChange($event)"
+                  >
                     <template #icon>
                       <i class="user icon outline"></i>
                     </template>
-                    <template v-if="iName" #message-danger>Required</template>
+                    <template v-if="iName" #message-danger>Please enter your name</template>
                   </vs-input>
                 </div>
                 <div class="form-item-basic">
-                  <vs-input v-model="email" placeholder="Email">
+                  <vs-input
+                    :state="iEmail ? 'danger' : null"
+                    v-model="email"
+                    placeholder="Email"
+                    @input="emailInput($event)"
+                    @change="emailChange($event)"
+                  >
                     <template #icon>
                       <i class="envelope icon outline"></i>
                     </template>
+                    <template v-if="iEmail" #message-danger>Pleaase use a valid email</template>
                   </vs-input>
                 </div>
               </section>
@@ -99,18 +112,30 @@
                 <div class="form-section-name">Website Information</div>
 
                 <div class="form-item-basic">
-                  <vs-input v-model="webname" placeholder="Name of your website">
+                  <vs-input
+                    v-model="webname"
+                    placeholder="Name of your website"
+                    @input="wnInput($event)"
+                    @change="wnChange($event)"
+                  >
                     <template #icon>
                       <i class="globe icon"></i>
                     </template>
+                    <template v-if="iWebname" #message-danger>Please choose a name for your website</template>
                   </vs-input>
                 </div>
 
                 <div class="form-item-basic">
-                  <vs-input v-model="pnum" placeholder="Estimated number of pages">
+                  <vs-input
+                    v-model="pnum"
+                    placeholder="Estimated number of pages"
+                    @input="numInput($event)"
+                    @change="numChange($event)"
+                  >
                     <template #icon>
                       <i class="list ol icon"></i>
                     </template>
+                    <template v-if="iPnum" #message-danger>Please fill in the blank</template>
                   </vs-input>
                 </div>
                 <div class="check">
@@ -150,7 +175,7 @@
 
                 <div class="more-detail-cn">
                   <span class="more-detail">Tell us more about your website</span>
-                  <textarea class="more-detail-textarea"></textarea>
+                  <textarea v-model="moreAboutWebsite" class="more-detail-textarea"></textarea>
                 </div>
                 <vs-button
                   ref="submitButton"
@@ -166,6 +191,13 @@
                 </vs-button>
               </section>
             </form>
+            <vs-dialog v-model="errorDialog">
+              <template #header>Invalid form inputs.</template>
+              <div>please provide valid input fields, invalid fields are marked as red</div>
+              <template #footer>
+                <vs-button @click="errorDialog = false">Ok</vs-button>
+              </template>
+            </vs-dialog>
           </div>
         </div>
       </div>
@@ -179,6 +211,7 @@
 import { TimelineLite, Power3, Power0 } from "gsap";
 import * as ScrollMagic from "scrollmagic-with-ssr";
 import { ScrollMagicPluginGsap } from "scrollmagic-plugin-gsap";
+import axios from "axios";
 
 export default {
   data() {
@@ -187,25 +220,111 @@ export default {
       email: "",
       webname: "",
       pnum: "",
+      moreAboutWebsite: "",
       iName: false,
       iEmail: false,
       iWebname: false,
       iPnum: false,
       options: [],
-      submitting: false
+      submitting: false,
+      formHasError: false,
+      errorDialog: false
     };
   },
   methods: {
     formSubmit() {
-      // console.log(this.$refs.formSubmit)
-      this.submitting = true;
-      this.$vs.loading({
-        // target: this.$refs.submitButton,
-        background: "white",
-        color: "#039eb0",
-        type: "corners"
-      });
-      console.log("submitting");
+      this.formHasError = false;
+
+      if (!this.name) {
+        this.iName = true;
+        this.formHasError = true;
+      }
+      if (!this.email.includes("@")) {
+        this.iEmail = true;
+        this.formHasError = true;
+      }
+      if (!this.pnum) {
+        this.iPnum = true;
+        this.formHasError = true;
+      }
+      if (!this.webname) {
+        this.iWebname = true;
+        this.formHasError = true;
+      }
+
+      if (this.formHasError) {
+        this.errorDialog = true;
+      } else {
+        // this.$vs.loading({
+        //   background: "white",
+        //   color: "#039eb0",
+        //   type: "corners"
+        // });
+        this.sendFormInfo({ someInformationAsTest: "test" });
+      }
+    },
+
+    //email
+    emailInput(e) {
+      if (e.includes("@")) {
+        this.iEmail = false;
+        this.formHasError = false;
+      }
+    },
+    emailChange(e) {
+      if (!e.target.value.includes("@")) {
+        this.iEmail = true;
+        this.formHasError = true;
+      }
+    },
+
+    //name
+    nameInput(e) {
+      if (e) {
+        this.iName = false;
+        this.formHasError = false;
+      }
+    },
+    nameChange(e) {
+      if (!e.target.value) {
+        this.iName = true;
+        this.formHasError = true;
+      }
+    },
+
+    // web name
+    wnInput(e) {
+      if (e) {
+        this.iWebname = false;
+        this.formHasError = false;
+      }
+    },
+    wnChange(e) {
+      if (!e.target.value) {
+        this.iWebname = true;
+        this.formHasError = true;
+      }
+    },
+    // number
+    numInput(e) {
+      if (e) {
+        this.iPnum = false;
+        this.formHasError = false;
+      }
+    },
+    numChange(e) {
+      if (!e.target.value) {
+        this.iPnum = true;
+        this.formHasError = true;
+      }
+    },
+
+    async sendFormInfo(info) {
+      const res = await axios.post(
+        "http://sedevs.com/files/api/send_contact",
+        info
+      );
+      console.log(res.data);
     }
   },
   mounted() {
